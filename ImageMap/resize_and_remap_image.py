@@ -46,7 +46,7 @@ def resize_and_remap_image_impl(image: torch.Tensor, scale: float, palette: torc
 
     resized_image = F.interpolate(image.permute(0, 3, 1, 2),
                                   size=(new_h, new_w),
-                                  mode='bilinear',
+                                  mode='bicubic',
                                   align_corners=False).permute(0, 2, 3, 1)
 
     logging.info(language_manager.translate('image_processing'))
