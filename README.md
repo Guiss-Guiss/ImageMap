@@ -73,13 +73,13 @@ python main.py
 
 ## 💡 Visual Quality Comparison
 
-####Traditional Resizing:
+#### Traditional Resizing:
 - ❌ Creates averaged colors
 - ❌ Tends toward grey
 - ❌ Loses contrast
 - ❌ Blurs details
 
-####ImageMap:
+#### ImageMap:
 - ✅ Uses only original colors
 - ✅ Maintains color vibrancy
 - ✅ Preserves contrasts
