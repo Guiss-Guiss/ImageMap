@@ -59,7 +59,7 @@ ImageMap's approach:
 
 ```bash
 # Clone the repository
-git clone https://github.com/guiss-guiss/ImageMap.git
+git clone https://github.com/Guiss-Guiss/ImageMap.git
 
 # Navigate to directory
 cd ImageMap
