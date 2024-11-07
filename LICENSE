@@ -6,6 +6,28 @@
  of this license document, but changing it is not allowed.
 
                             Preamble
+Non-Commercial Use Restriction
+This software is licensed under the GNU Affero General Public License (AGPL)
+with the following additional terms:
+
+Non-Commercial Use Only: You may use, modify, and distribute this software 
+freely for non-commercial purposes only. Commercial use of this software, 
+including but not limited to offering the software as a service, 
+incorporating it into a product for sale, or using it in revenue-generating
+activities, is strictly prohibited without explicit written permission from
+the original creator.
+
+Commercial Use Rights Reserved by the Creator: Only the original creator
+of this software retains the exclusive right to commercialize this software.
+All other parties are restricted to non-commercial use only, 
+as defined in this license.
+
+Contribution Clause: If you distribute modified versions of this software,
+you agree to comply with the AGPL v3 requirements and include
+this non-commercial restriction clause in all copies
+or substantial portions of the software.
+
+The remainder of this license follows the terms and conditions of the AGP
 
   The GNU Affero General Public License is a free, copyleft license for
 software and other kinds of works, specifically designed to ensure
