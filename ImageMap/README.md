@@ -52,7 +52,7 @@ ImageMap's approach:
 ## 📋 Prerequisites
 
 - Python 3.11.8
-- CUDA Toolkit (for GPU acceleration)
+- CUDA Toolkit (for GPU acceleration)  https://developer.nvidia.com/cuda-downloads?
 - Python dependencies listed in `requirements.txt`
 
 ## ⚙️ Installation
