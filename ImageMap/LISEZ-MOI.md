@@ -59,7 +59,7 @@ L'approche d'ImageMap :
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/guiss-guiss/ImageMap.git
+git clone https://github.com/Guiss-Guiss/ImageMap.git
 
 # Accéder au répertoire
 cd ImageMap
