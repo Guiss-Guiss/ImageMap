@@ -26,9 +26,7 @@ class Application(ttk.Frame):
         self.master = master
         self.pack(fill=BOTH, expand=True)
         self.preview_label = None
-        logging.info("Before create_widgets")
         self.create_widgets()
-        logging.info(f"After create_widgets, preview_label: {self.preview_label}")
         self.image = None
         self.unique_colors_count = 0
         self.start_time = None
@@ -36,7 +34,9 @@ class Application(ttk.Frame):
         self.elapsed_time_thread = None
         self.stop_elapsed_time = threading.Event()
         self.progress_queue = queue.Queue()
+        self.last_progress = -1
         self.create_settings_menu()
+        self.update_gui()
 
     def create_widgets(self):
         large_font = font.Font(family="Arial", size=10)
@@ -55,10 +55,8 @@ class Application(ttk.Frame):
         self.time_label = ttk.Label(self, text=language_manager.translate('elapsed_time').format("00:00:00"), font=large_font)
         self.time_label.pack(pady=10)
 
-        logging.info("Creating preview_label")
         self.preview_label = ttk.Label(self)
         self.preview_label.pack(pady=10)
-        logging.info(f"preview_label created: {self.preview_label}")
 
         language_manager.add_observer('main_window', self.update_language)
 
@@ -106,23 +104,12 @@ class Application(ttk.Frame):
         self.load_button.config(state='disabled')
         self.progress_bar.config(mode='determinate')
         self.progress_bar['value'] = 0
-        self.update_progress_callback(0)
         self.start_time = time.time()
         self.stop_elapsed_time.clear()
-        self.elapsed_time_thread = threading.Thread(target=self.update_elapsed_time)
-        self.elapsed_time_thread.start()
+        self.stop_time = False
 
         thread = threading.Thread(target=self.load_image_thread, args=(image_path,))
         thread.start()
-
-    def update_elapsed_time(self):
-        while not self.stop_elapsed_time.is_set():
-            if self.start_time is not None and not self.stop_time:  # Use self.stop_time
-                elapsed_time = time.time() - self.start_time
-                elapsed_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
-                new_text = language_manager.translate('elapsed_time').format(elapsed_str)
-                self.master.after(0, self.time_label.config, {'text': new_text})
-            time.sleep(1)
 
     def load_image_thread(self, image_path):
         try:
@@ -141,9 +128,7 @@ class Application(ttk.Frame):
         self.progress_bar.stop()
         self.progress_bar.config(mode='determinate')
         self.load_button.config(state='normal')
-        self.stop_elapsed_time.set()
-        if self.elapsed_time_thread:
-            self.elapsed_time_thread.join()
+        self.stop_time = True
 
         if success:
             self.master.after(100, self.ask_parameters)
@@ -163,48 +148,81 @@ class Application(ttk.Frame):
 
     def background_task(self, scale, color_count):
         logging.info(f"Starting background task with scale: {scale}, color_count: {color_count}")
-        logging.info(f"Entering background_task, preview_label: {self.preview_label}")
-        try:
-            palette_list = extract_color_palette(self.image.cpu().numpy(), color_count, self.update_progress_callback)
-            palette = torch.tensor(palette_list, device=self.image.device, dtype=self.image.dtype)
-            
-            processed_image = resize_and_remap_image(self.image, scale, palette, 512, self.update_progress_callback)
+        
+        self.start_time = time.time()
+        self.stop_time = False
+        self.progress_bar['value'] = 0
+        self.last_progress = -1
+    
+        def worker():
+            try:
+                self.update_status(language_manager.translate("extracting_color_palette"))
+                palette_list = extract_color_palette(self.image.cpu().numpy(), color_count, self.update_progress_callback)
+                palette = torch.tensor(palette_list, device=self.image.device, dtype=self.image.dtype)
+                
+                self.last_progress = 49  
+                self.update_status(language_manager.translate("resizing_remapping"))
+                processed_image = resize_and_remap_image(self.image, scale, palette, 512, self.update_progress_callback)
 
-            # Display preview
-            self.display_preview(processed_image)
+                self.master.after(0, self.update_status, language_manager.translate("displaying_preview"))
+                self.master.after(0, self.display_preview, processed_image)
 
-            dialog = FileExplorerDialog(self.master, image_data=processed_image, mode="save")
-            self.master.wait_window(dialog)
+                self.master.after(0, self.update_status, language_manager.translate("ready_to_save"))
+                self.master.after(0, self.save_dialog, processed_image)
 
-            if dialog.result:
-                output_path = dialog.result
-                save_image(processed_image, output_path)
-                logging.info("Background task completed successfully")
+            except Exception as e:
+                error_message = f"{language_manager.translate('error_occurred')}: {str(e)}"
+                logging.error(error_message, exc_info=True)
+                self.master.after(0, self.update_status, error_message)
+            finally:
                 self.stop_time = True
-            else:
-                logging.info("Background task was cancelled")
-                self.stop_time = True
-        except Exception as e:
-            logging.error(f"{language_manager.translate('error_occurred').format(e)}", exc_info=True)
-            self.stop_time = True
-        finally:
-            self.stop_elapsed_time.set()
-            if self.elapsed_time_thread:
-                self.elapsed_time_thread.join()
+                self.master.after(0, self.update_status, language_manager.translate("task_completed"))
+                self.master.after(0, lambda: setattr(self.progress_bar, 'value', 100))
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+
+
+    def save_dialog(self, processed_image):
+        dialog = FileExplorerDialog(self.master, image_data=processed_image, mode="save")
+        self.master.wait_window(dialog)
+
+        if dialog.result:
+            output_path = dialog.result
+            self.update_status(language_manager.translate("main_action_save"))
+            save_image(processed_image, output_path)
+            self.update_status(language_manager.translate("image_save_success"))
+            logging.info(language_manager.translate("image_save_success"))
+        else:
+            self.update_status(language_manager.translate("save_cancelled"))
+            logging.info(language_manager.translate("save_cancelled"))
+
+    def update_status(self, message):
+        if not message.endswith('\n'):
+            message += '\n'
+        self.text_output.insert(tk.END, message)
+        self.text_output.see(tk.END)
+        self.text_output.update_idletasks()
+        logging.info(message.strip())
 
     def update_progress_callback(self, progress):
         self.progress_queue.put(progress)
-        if progress == 0:
-            self.after(100, self.update_progress)
 
-    def update_progress(self):
+    def update_gui(self):
         try:
             while True:
                 progress = self.progress_queue.get_nowait()
                 self.progress_bar['value'] = progress
                 self.update_idletasks()
         except queue.Empty:
-            self.after(100, self.update_progress)
+            pass
+
+        if self.start_time is not None and not self.stop_time:
+            elapsed_time = time.time() - self.start_time
+            elapsed_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+            self.time_label.config(text=language_manager.translate('elapsed_time').format(elapsed_str))
+
+        self.master.after(100, self.update_gui)
 
     def display_preview(self, processed_image):
         logging.info(f"Entering display_preview, preview_label: {self.preview_label}")
@@ -223,13 +241,10 @@ class Application(ttk.Frame):
         pil_image = Image.fromarray(processed_image)
         logging.info(f"PIL Image created. Size: {pil_image.size}")
 
-        # Resize for preview (adjust size as needed)
         pil_image.thumbnail((300, 300))
 
-        # Convert to PhotoImage
         photo = ImageTk.PhotoImage(pil_image)
 
-        # Update preview label
         logging.info("Updating preview label")
         logging.info(f"self.preview_label: {self.preview_label}")
         self.preview_label.config(image=photo)

@@ -16,7 +16,6 @@ def main():
     root.title(language_manager.translate('starting_app'))
     root.geometry("800x700")
 
-    # Center the window on the screen
     root.update_idletasks()
     width = root.winfo_width()
     height = root.winfo_height()

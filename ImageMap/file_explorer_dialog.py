@@ -100,7 +100,6 @@ class FileExplorerDialog(tk.Toplevel):
         self.go_back()
 
     def main_action(self):
-        print(f"main_action called with mode: {self.mode}")
         if self.mode == "load":
             self.select_file()
         else:

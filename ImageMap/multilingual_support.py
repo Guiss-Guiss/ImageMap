@@ -1,11 +1,13 @@
 import json
 import os
 import logging
+from config_manager import ConfigManager
 
 class LanguageManager:
     def __init__(self):
         self.translations = {}
-        self.current_language = 'en'
+        self.config_manager = ConfigManager()
+        self.current_language = self.config_manager.get_language()
         self.languages = {
             'en': 'English',
             'fr': 'Français',
@@ -42,6 +44,7 @@ class LanguageManager:
     def set_language(self, lang_code):
         if lang_code in self.languages:
             self.current_language = lang_code
+            self.config_manager.set_language(lang_code) 
             self.notify_observers()
         else:
             logging.error(f"Error: Language code '{lang_code}' not supported.")
@@ -60,7 +63,10 @@ class LanguageManager:
             except Exception as e:
                 logging.error(f"Error notifying observer: {e}", exc_info=True)
 
-    def translate(self, key):
-        return self.translations.get(self.current_language, {}).get(key, key)
+    def translate(self, key, *args):
+        translation = self.translations.get(self.current_language, {}).get(key, key)
+        if args:
+            return translation.format(*args)
+        return translation
 
 language_manager = LanguageManager()
