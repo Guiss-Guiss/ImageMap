@@ -3,7 +3,7 @@
 A Python application for image processing that preserves visual vibrancy by avoiding color averaging, featuring a graphical interface and multilingual support.
 
 ![Languages](https://img.shields.io/badge/Languages-FR%20|%20EN%20|%20DE%20|%20ES-blue)
-![Python](https://img.shields.io/badge/Python-3.11.8-green)
+![Python](https://img.shields.io/badge/Python-3.11-green)
 ![GPU](https://img.shields.io/badge/GPU-Compatible-brightgreen)
 ![No Color Averaging](https://img.shields.io/badge/No%20Color%20Averaging-✓-orange)
 
